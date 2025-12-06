@@ -98,12 +98,12 @@ It enables teams and organizations to operate faster, reduce manual overhead, an
 
 ### **Image Walkthrough**
 
-1. ![](./demo/1.png)
-2. ![](./demo/2.png)
-3. ![](./demo/3.png)
-4. ![](./demo/4.png)
-5. ![](./demo/5.png)
-6. ![](./demo/6.png)
+1. ![](./demo/6.png)
+2. ![](./demo/5.png)
+3. ![](./demo/4.png)
+4. ![](./demo/3.png)
+5. ![](./demo/2.png)
+6. ![](./demo/1.png)
 
 ---
 
