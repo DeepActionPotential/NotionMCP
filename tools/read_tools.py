@@ -14,10 +14,10 @@ def register(app: FastMCP) -> None:
     # ---------- existing content/block readers ----------
     @app.tool()
     async def get_page_content(
-        page: str,
-        by_name: bool = False,
-        page_size: int = 100,
-        start_cursor: Optional[str] = None,
+        page,
+        by_name=False,
+        page_size=100,
+        start_cursor=None,
     ) -> Dict[str, Any]:
         """Fetch one page of block children for a page ID or name."""
         try:
@@ -31,13 +31,13 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def iter_page_content(
-        page: str,
-        by_name: bool = False,
-        page_size: int = 100,
-        max_pages: int = 20,
+        page,
+        by_name=False,
+        page_size=100,
+        max_pages=20,
     ) -> Dict[str, Any]:
         """Iterate block-children pages up to max_pages."""
-        chunks: List[Dict[str, Any]] = []
+        chunks = []
         pages = 0
         try:
             async with ReadNotionClient() as r:
@@ -52,9 +52,9 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def get_page_text(
-        page: str,
-        by_name: bool = False,
-        limit: Optional[int] = None,
+        page,
+        by_name=False,
+        limit=None,
     ) -> Dict[str, Any]:
         """Extract readable text (newline-joined) from a page."""
         try:
@@ -70,7 +70,7 @@ def register(app: FastMCP) -> None:
 
     # ---------- NEW: objects & database APIs ----------
     async def _resolve_page_id(page: str, by_name: bool) -> str:
-        """Helper: resolve title -> id if needed (tools-only helper)."""
+        """Helper: resolve title -> id if needed (internal only)."""
         if not by_name:
             return page
         async with SearchNotionClient() as s:
@@ -81,7 +81,7 @@ def register(app: FastMCP) -> None:
             return res[0]["id"]
 
     @app.tool()
-    async def get_page_object(page: str, by_name: bool = False) -> Dict[str, Any]:
+    async def get_page_object(page, by_name=False) -> Dict[str, Any]:
         """GET /pages/{id} (resolve by title if requested)."""
         try:
             pid = await _resolve_page_id(page, by_name)
@@ -92,7 +92,7 @@ def register(app: FastMCP) -> None:
             return {"ok": False, "error": repr(e)}
 
     @app.tool()
-    async def get_block(block_id: str) -> Dict[str, Any]:
+    async def get_block(block_id) -> Dict[str, Any]:
         """GET /blocks/{id}"""
         try:
             async with ReadNotionClient() as r:
@@ -103,10 +103,10 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def list_child_pages(
-        page: str,
-        by_name: bool = False,
-        page_size: int = 100,
-        max_pages: int = 20,
+        page,
+        by_name=False,
+        page_size=100,
+        max_pages=20,
     ) -> Dict[str, Any]:
         """Return child_page blocks (id + title)."""
         try:
@@ -118,7 +118,7 @@ def register(app: FastMCP) -> None:
             return {"ok": False, "error": repr(e)}
 
     @app.tool()
-    async def get_database_object(database_id: str) -> Dict[str, Any]:
+    async def get_database_object(database_id) -> Dict[str, Any]:
         """GET /databases/{id}"""
         try:
             async with ReadNotionClient() as r:
@@ -129,11 +129,11 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def query_database(
-        database_id: str,
-        filter: Optional[Dict[str, Any]] = None,
-        sorts: Optional[List[Dict[str, Any]]] = None,
-        page_size: int = 100,
-        start_cursor: Optional[str] = None,
+        database_id,
+        filter=None,
+        sorts=None,
+        page_size=100,
+        start_cursor=None,
     ) -> Dict[str, Any]:
         """POST /databases/{id}/query (single page)."""
         try:
@@ -151,14 +151,14 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def iter_query_database(
-        database_id: str,
-        filter: Optional[Dict[str, Any]] = None,
-        sorts: Optional[List[Dict[str, Any]]] = None,
-        page_size: int = 100,
-        max_pages: int = 20,
+        database_id,
+        filter=None,
+        sorts=None,
+        page_size=100,
+        max_pages=20,
     ) -> Dict[str, Any]:
         """Iterate database query across pages."""
-        chunks: List[Dict[str, Any]] = []
+        chunks = []
         pages = 0
         try:
             async with ReadNotionClient() as r:
@@ -172,19 +172,21 @@ def register(app: FastMCP) -> None:
                     pages += 1
                     if pages >= max_pages or not ch.get("has_more"):
                         break
-            # Flatten results for convenience
-            rows: List[Dict[str, Any]] = []
+
+            rows = []
             for ch in chunks:
                 rows.extend(ch.get("results", []))
+
             return {"ok": True, "chunks": chunks, "rows": rows, "pages": pages, "count": len(rows)}
+
         except Exception as e:
             return {"ok": False, "error": repr(e)}
 
-    # ---------- convenience readers you already liked ----------
+    # ---------- convenience readers ----------
     @app.tool()
-    async def get_page_headings(page: str, by_name: bool = False, max_pages: int = 20) -> Dict[str, Any]:
+    async def get_page_headings(page, by_name=False, max_pages=20) -> Dict[str, Any]:
         """Collect heading_1/2/3 texts from a page."""
-        headings: List[Dict[str, Any]] = []
+        headings = []
         pages = 0
         try:
             async with ReadNotionClient() as r:
@@ -194,20 +196,23 @@ def register(app: FastMCP) -> None:
                         if isinstance(btype, str) and btype.startswith("heading_"):
                             data = b.get(btype, {}) or {}
                             rt = data.get("rich_text") or []
-                            txt = "".join(t.get("plain_text", "") for t in rt if isinstance(t, dict)).strip()
+                            txt = "".join(
+                                t.get("plain_text", "") for t in rt if isinstance(t, dict)
+                            ).strip()
                             if txt:
                                 headings.append({"type": btype, "text": txt})
                     pages += 1
                     if pages >= max_pages or not ch.get("has_more"):
                         break
             return {"ok": True, "headings": headings, "count": len(headings)}
+
         except Exception as e:
             return {"ok": False, "error": repr(e)}
 
     @app.tool()
-    async def get_page_checklist(page: str, by_name: bool = False, max_pages: int = 20) -> Dict[str, Any]:
+    async def get_page_checklist(page, by_name=False, max_pages=20) -> Dict[str, Any]:
         """Collect to_do items and their checked status."""
-        items: List[Dict[str, Any]] = []
+        items = []
         pages = 0
         try:
             async with ReadNotionClient() as r:
@@ -216,7 +221,9 @@ def register(app: FastMCP) -> None:
                         if b.get("type") == "to_do":
                             data = b.get("to_do", {}) or {}
                             rt = data.get("rich_text") or []
-                            txt = "".join(t.get("plain_text", "") for t in rt if isinstance(t, dict)).strip()
+                            txt = "".join(
+                                t.get("plain_text", "") for t in rt if isinstance(t, dict)
+                            ).strip()
                             items.append({"text": txt, "checked": bool(data.get("checked"))})
                     pages += 1
                     if pages >= max_pages or not ch.get("has_more"):
@@ -226,9 +233,9 @@ def register(app: FastMCP) -> None:
             return {"ok": False, "error": repr(e)}
 
     @app.tool()
-    async def get_page_bullets(page: str, by_name: bool = False, max_pages: int = 20) -> Dict[str, Any]:
+    async def get_page_bullets(page, by_name=False, max_pages=20) -> Dict[str, Any]:
         """Collect bulleted_list_item and numbered_list_item texts."""
-        bullets: List[str] = []
+        bullets = []
         pages = 0
         try:
             async with ReadNotionClient() as r:
@@ -238,7 +245,9 @@ def register(app: FastMCP) -> None:
                         if t in ("bulleted_list_item", "numbered_list_item"):
                             data = b.get(t, {}) or {}
                             rt = data.get("rich_text") or []
-                            txt = "".join(x.get("plain_text", "") for x in rt if isinstance(x, dict)).strip()
+                            txt = "".join(
+                                x.get("plain_text", "") for x in rt if isinstance(x, dict)
+                            ).strip()
                             if txt:
                                 bullets.append(txt)
                     pages += 1

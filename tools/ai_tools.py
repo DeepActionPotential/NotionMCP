@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 from core.notion_clients import AINotionClient
@@ -16,14 +16,15 @@ def _get_ai() -> AINotionClient:
         _AI = AINotionClient(summarizer, emotion, verbose=False)
     return _AI
 
+
 def register(app: FastMCP) -> None:
     @app.tool()
     async def summarize_page_text(
-        page: str,
-        by_name: bool = True,
-        max_summary_length: int = 200,
-        preview_lines: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        page,
+        by_name=True,
+        max_summary_length=200,
+        preview_lines=None,
+    ):
         """Resolve page, fetch text, and return a T5 abstractive summary."""
         try:
             ai = _get_ai()
@@ -39,10 +40,10 @@ def register(app: FastMCP) -> None:
 
     @app.tool()
     async def get_page_sentiment(
-        page: str,
-        by_name: bool = True,
-        preview_lines: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        page,
+        by_name=True,
+        preview_lines=None,
+    ):
         """Resolve page, fetch text, and return emotion analysis."""
         try:
             ai = _get_ai()

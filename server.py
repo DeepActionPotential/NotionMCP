@@ -1,18 +1,22 @@
 from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
-# Single shared app for the whole process
-app = FastMCP("NotionMCPServer")
+# Shared app instance
+mcp = FastMCP(
+    name="NotionMCPServer",
+    stateless_http=True,
+)
 
-# Import tool modules AFTER creating `app`
+# Import tools after creating app
 import tools.search_tools as search_tools
 import tools.read_tools as read_tools
 import tools.ai_tools as ai_tools
 
-# Register tools (synchronous)
-search_tools.register(app)
-read_tools.register(app)
-ai_tools.register(app)
+# Register tools
+search_tools.register(mcp)
+read_tools.register(mcp)
+ai_tools.register(mcp)
 
 if __name__ == "__main__":
-    app.run()
+    # Run using SSE transport so ChatGPT can connect
+    mcp.run(transport="stdio")
